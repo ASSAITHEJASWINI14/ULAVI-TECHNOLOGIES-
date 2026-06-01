@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+// Use relative URLs so requests go through Vite's proxy to the backend.
+// Never use localhost:8000 directly — the browser cannot reach it on Replit.
+const API_URL = import.meta.env.VITE_API_URL || '';
 
 export const api = axios.create({
   baseURL: API_URL,
