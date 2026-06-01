@@ -1,0 +1,259 @@
+PROJECT MODIFICATION REQUEST
+
+Analyze the complete existing React + FastAPI project before making changes.
+
+Current Flow:
+
+Voice Input → Speech-to-Text → Translation → Email Preview → Send Email
+
+Required New Flow:
+
+Voice Input
+→ Speech-to-Text
+→ Translation
+→ AI Consultation Layer (NEW)
+→ Email Preview
+→ Send Email
+
+OBJECTIVE
+
+Add an AI-powered consultation and recommendation layer between Translation and Email Preview.
+
+The solution should be generic and not limited to travel planning.
+
+The AI layer must be capable of:
+
+1. Collecting structured information from users.
+2. Answering user queries conversationally.
+3. Generating recommendations.
+4. Displaying all collected information before email generation.
+5. Passing the final generated content to the Email Preview screen.
+
+---
+
+NEW AI CONSULTATION LAYER
+
+Create a new screen/component after Translation and before Email Preview.
+
+The screen should contain:
+
+A. User Requirement Collection
+
+The AI should dynamically collect:
+
+* Number of Days
+* Number of Persons
+* Budget
+* Package Preference
+* Food Preference
+* Additional Preferences
+
+These fields should be editable.
+
+Use React state management.
+
+Persist data until email generation.
+
+---
+
+B. AI Conversational Assistant
+
+Add a chatbot panel.
+
+The user can ask free-form questions.
+
+Examples:
+
+* What is the best itinerary?
+* What food options are available?
+* What hotels are recommended?
+* What is the weather like?
+* Can I reduce the budget?
+
+The chatbot must:
+
+* Maintain conversation history
+* Display user messages
+* Display AI responses
+* Support follow-up questions
+
+---
+
+C. LLM Integration
+
+Implement backend API endpoints.
+
+Create:
+
+POST /api/consultation/chat
+
+Input:
+
+{
+"query": "...",
+"context": {
+"days": "...",
+"persons": "...",
+"budget": "...",
+"food_preference": "...",
+"package_preference": "..."
+}
+}
+
+Response:
+
+{
+"answer": "..."
+}
+
+The LLM should use both:
+
+1. User query
+2. Collected form data
+
+when generating answers.
+
+---
+
+D. Recommendation Generator
+
+Create another endpoint:
+
+POST /api/consultation/recommend
+
+Input:
+
+{
+collected_data
+}
+
+Output:
+
+{
+recommendations
+}
+
+The AI should generate:
+
+* Recommendations
+* Suggested plans
+* Budget considerations
+* Food suggestions
+* General guidance
+
+The design must remain generic so it can work for travel, education, healthcare, events, or future domains.
+
+---
+
+E. Consultation Summary
+
+Add a generated summary section.
+
+Show:
+
+Collected Information
+
+* Days
+* Persons
+* Budget
+* Food Preference
+* Package Preference
+
+User Questions
+
+AI Answers
+
+Recommendations
+
+Display this in a clean card layout.
+
+---
+
+EMAIL PREVIEW INTEGRATION
+
+Modify the existing Email Preview screen.
+
+The email preview must now include:
+
+1. Original translated content
+2. Collected consultation details
+3. User questions
+4. AI answers
+5. Recommendations
+6. Generated summary
+
+The user must review everything before sending.
+
+---
+
+EMAIL FLOW
+
+Do NOT automatically send emails.
+
+Required flow:
+
+Generate Preview
+→ User Reviews
+→ User Clicks Confirm
+→ Email Sent
+
+---
+
+UI REQUIREMENTS
+
+Maintain existing application theme.
+
+Create:
+
+* ConsultationPage.jsx
+* ConsultationChat.jsx
+* ConsultationForm.jsx
+* RecommendationPanel.jsx
+
+Use responsive design.
+
+Keep styling consistent with the existing project.
+
+---
+
+BACKEND REQUIREMENTS
+
+Create:
+
+routes/consultation.py
+
+services/consultation_service.py
+
+Implement proper request validation.
+
+Handle API errors gracefully.
+
+---
+
+STATE MANAGEMENT
+
+Ensure data persists across:
+
+Translation Screen
+→ Consultation Screen
+→ Email Preview Screen
+
+Use existing state management architecture if present.
+
+---
+
+FINAL DELIVERABLE
+
+Provide complete implementation including:
+
+1. Frontend components
+2. Backend APIs
+3. Routing updates
+4. State management updates
+5. Email preview modifications
+6. Error handling
+7. Integration with the current project structure
+
+Do not create a separate application.
+
+Modify the existing project and integrate the new AI Consultation Layer directly into the current workflow.
