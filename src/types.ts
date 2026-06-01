@@ -7,7 +7,8 @@ export type AppScreen =
   | 'contact'
   | 'email-preview'
   | 'success'
-  | 'dashboard';
+  | 'dashboard'
+  | 'settings';
 
 export interface TranscriptData {
   original: string;

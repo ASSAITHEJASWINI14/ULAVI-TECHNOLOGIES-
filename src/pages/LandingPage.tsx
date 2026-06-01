@@ -1,14 +1,45 @@
-import React from 'react';
-import { Mic, Globe, Mail, BarChart2 } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Mic, Globe, Mail, BarChart2, Settings, CheckCircle, Zap } from 'lucide-react';
+import { api } from '../lib/api';
 
 interface Props {
   onStart: () => void;
   onDashboard: () => void;
+  onSettings: () => void;
 }
 
-export default function LandingPage({ onStart, onDashboard }: Props) {
+export default function LandingPage({ onStart, onDashboard, onSettings }: Props) {
+  const [aiEnabled, setAiEnabled] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    api.get('/api/settings/ai-status')
+      .then((res) => setAiEnabled(res.data.enabled))
+      .catch(() => setAiEnabled(false));
+  }, []);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 flex flex-col items-center justify-center p-6 text-white">
+      {/* Settings button top-right */}
+      <div className="absolute top-4 right-4">
+        <button
+          onClick={onSettings}
+          className="flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white text-sm font-medium px-4 py-2 rounded-full transition-all"
+        >
+          <Settings className="w-4 h-4" />
+          <span>Settings</span>
+          {aiEnabled === true && (
+            <span className="flex items-center gap-1 text-green-300 text-xs ml-1">
+              <CheckCircle className="w-3 h-3" /> AI On
+            </span>
+          )}
+          {aiEnabled === false && (
+            <span className="flex items-center gap-1 text-yellow-300 text-xs ml-1">
+              <Zap className="w-3 h-3" /> AI Off
+            </span>
+          )}
+        </button>
+      </div>
+
       <div className="max-w-2xl w-full text-center">
         <div className="mb-8 flex justify-center">
           <div className="bg-white/10 backdrop-blur-sm rounded-full p-6">
@@ -38,6 +69,24 @@ export default function LandingPage({ onStart, onDashboard }: Props) {
             <p className="text-xs text-purple-200">Send structured support requests</p>
           </div>
         </div>
+
+        {/* AI status banner */}
+        {aiEnabled === false && (
+          <div
+            onClick={onSettings}
+            className="cursor-pointer mb-6 inline-flex items-center gap-2 bg-yellow-400/10 border border-yellow-400/30 text-yellow-200 text-sm px-5 py-2.5 rounded-full hover:bg-yellow-400/20 transition-all"
+          >
+            <Zap className="w-4 h-4 text-yellow-300" />
+            AI chat is in fallback mode —
+            <span className="font-semibold underline underline-offset-2">add OpenAI key to enable</span>
+          </div>
+        )}
+        {aiEnabled === true && (
+          <div className="mb-6 inline-flex items-center gap-2 bg-green-400/10 border border-green-400/30 text-green-200 text-sm px-5 py-2.5 rounded-full">
+            <CheckCircle className="w-4 h-4 text-green-300" />
+            AI-powered chat &amp; recommendations are active
+          </div>
+        )}
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <button

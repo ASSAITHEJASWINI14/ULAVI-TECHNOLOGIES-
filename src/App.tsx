@@ -8,10 +8,12 @@ import ContactPage from './pages/ContactPage';
 import EmailPreviewPage from './pages/EmailPreviewPage';
 import SuccessPage from './pages/SuccessPage';
 import DashboardPage from './pages/DashboardPage';
+import SettingsPage from './pages/SettingsPage';
 import { AppScreen, TranscriptData, ContactData, ConsultationData } from './types';
 
 export default function App() {
   const [screen, setScreen] = useState<AppScreen>('landing');
+  const [prevScreen, setPrevScreen] = useState<AppScreen>('landing');
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [audioLanguage, setAudioLanguage] = useState('en');
   const [transcript, setTranscript] = useState<TranscriptData | null>(null);
@@ -19,6 +21,11 @@ export default function App() {
   const [contact, setContact] = useState<ContactData | null>(null);
   const [referenceToken, setReferenceToken] = useState('');
   const [processingError, setProcessingError] = useState('');
+
+  const goTo = (s: AppScreen) => {
+    setPrevScreen(screen);
+    setScreen(s);
+  };
 
   const resetAll = () => {
     setAudioBlob(null);
@@ -30,11 +37,18 @@ export default function App() {
     setScreen('landing');
   };
 
+  if (screen === 'settings') {
+    return (
+      <SettingsPage onBack={() => setScreen(prevScreen === 'settings' ? 'landing' : prevScreen)} />
+    );
+  }
+
   if (screen === 'landing') {
     return (
       <LandingPage
-        onStart={() => setScreen('recording')}
-        onDashboard={() => setScreen('dashboard')}
+        onStart={() => goTo('recording')}
+        onDashboard={() => goTo('dashboard')}
+        onSettings={() => goTo('settings')}
       />
     );
   }
@@ -42,11 +56,11 @@ export default function App() {
   if (screen === 'recording') {
     return (
       <RecordingPage
-        onBack={() => setScreen('landing')}
+        onBack={() => goTo('landing')}
         onRecordingComplete={(blob, lang) => {
           setAudioBlob(blob);
           setAudioLanguage(lang);
-          setScreen('processing');
+          goTo('processing');
         }}
       />
     );
@@ -62,7 +76,7 @@ export default function App() {
               <p className="text-sm text-red-200">{processingError}</p>
             </div>
             <button
-              onClick={() => { setProcessingError(''); setScreen('recording'); }}
+              onClick={() => { setProcessingError(''); goTo('recording'); }}
               className="bg-white text-purple-900 font-bold py-3 px-8 rounded-2xl hover:bg-purple-100 transition-all"
             >
               Try Again
@@ -77,7 +91,7 @@ export default function App() {
         language={audioLanguage}
         onComplete={(data) => {
           setTranscript(data);
-          setScreen('transcript');
+          goTo('transcript');
         }}
         onError={(err) => setProcessingError(err)}
       />
@@ -88,8 +102,8 @@ export default function App() {
     return (
       <TranscriptPage
         transcript={transcript}
-        onBack={() => setScreen('recording')}
-        onNext={() => setScreen('consultation')}
+        onBack={() => goTo('recording')}
+        onNext={() => goTo('consultation')}
       />
     );
   }
@@ -98,10 +112,10 @@ export default function App() {
     return (
       <ConsultationPage
         transcript={transcript}
-        onBack={() => setScreen('transcript')}
+        onBack={() => goTo('transcript')}
         onNext={(data) => {
           setConsultation(data);
-          setScreen('contact');
+          goTo('contact');
         }}
       />
     );
@@ -110,10 +124,10 @@ export default function App() {
   if (screen === 'contact') {
     return (
       <ContactPage
-        onBack={() => setScreen('consultation')}
+        onBack={() => goTo('consultation')}
         onNext={(data) => {
           setContact(data);
-          setScreen('email-preview');
+          goTo('email-preview');
         }}
       />
     );
@@ -125,10 +139,10 @@ export default function App() {
         transcript={transcript}
         contact={contact}
         consultation={consultation}
-        onBack={() => setScreen('contact')}
+        onBack={() => goTo('contact')}
         onSuccess={(token) => {
           setReferenceToken(token);
-          setScreen('success');
+          goTo('success');
         }}
       />
     );
@@ -139,7 +153,7 @@ export default function App() {
       <SuccessPage
         token={referenceToken}
         onNewQuery={resetAll}
-        onDashboard={() => setScreen('dashboard')}
+        onDashboard={() => goTo('dashboard')}
       />
     );
   }
@@ -147,7 +161,7 @@ export default function App() {
   if (screen === 'dashboard') {
     return (
       <DashboardPage
-        onBack={() => setScreen('landing')}
+        onBack={() => goTo('landing')}
       />
     );
   }

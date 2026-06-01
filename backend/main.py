@@ -25,9 +25,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Register consultation routes
+# Register routes
 from routes.consultation import router as consultation_router
+from routes.settings import router as settings_router
 app.include_router(consultation_router)
+app.include_router(settings_router)
 
 OUTBOX_FILE = Path("email_outbox.json")
 
