@@ -1,23 +1,23 @@
 import React, { useState, useRef } from 'react';
-import { Mic, Square, ArrowLeft } from 'lucide-react';
+import { Mic, Square, ArrowLeft, Globe } from 'lucide-react';
 
 const LANGUAGES = [
-  { code: 'en', label: 'English' },
-  { code: 'hi', label: 'Hindi (हिन्दी)' },
-  { code: 'te', label: 'Telugu (తెలుగు)' },
-  { code: 'ta', label: 'Tamil (தமிழ்)' },
-  { code: 'kn', label: 'Kannada (ಕನ್ನಡ)' },
-  { code: 'ml', label: 'Malayalam (മലയാളം)' },
-  { code: 'mr', label: 'Marathi (मराठी)' },
-  { code: 'bn', label: 'Bengali (বাংলা)' },
-  { code: 'gu', label: 'Gujarati (ગુજરાતી)' },
-  { code: 'pa', label: 'Punjabi (ਪੰਜਾਬੀ)' },
-  { code: 'es', label: 'Spanish' },
-  { code: 'fr', label: 'French' },
-  { code: 'de', label: 'German' },
-  { code: 'zh', label: 'Chinese' },
-  { code: 'ar', label: 'Arabic' },
-  { code: 'ja', label: 'Japanese' },
+  { code: 'en', label: 'English', native: 'English' },
+  { code: 'hi', label: 'Hindi', native: 'हिन्दी' },
+  { code: 'te', label: 'Telugu', native: 'తెలుగు' },
+  { code: 'ta', label: 'Tamil', native: 'தமிழ்' },
+  { code: 'kn', label: 'Kannada', native: 'ಕನ್ನಡ' },
+  { code: 'ml', label: 'Malayalam', native: 'മലയാളം' },
+  { code: 'mr', label: 'Marathi', native: 'मराठी' },
+  { code: 'bn', label: 'Bengali', native: 'বাংলা' },
+  { code: 'gu', label: 'Gujarati', native: 'ગુજરાતી' },
+  { code: 'pa', label: 'Punjabi', native: 'ਪੰਜਾਬੀ' },
+  { code: 'es', label: 'Spanish', native: 'Español' },
+  { code: 'fr', label: 'French', native: 'Français' },
+  { code: 'de', label: 'German', native: 'Deutsch' },
+  { code: 'zh', label: 'Chinese', native: '中文' },
+  { code: 'ar', label: 'Arabic', native: 'العربية' },
+  { code: 'ja', label: 'Japanese', native: '日本語' },
 ];
 
 interface Props {
@@ -32,6 +32,8 @@ export default function RecordingPage({ onBack, onRecordingComplete }: Props) {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<BlobPart[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const selected = LANGUAGES.find((l) => l.code === language)!;
 
   const startRecording = async () => {
     try {
@@ -62,62 +64,91 @@ export default function RecordingPage({ onBack, onRecordingComplete }: Props) {
     }
   };
 
-  const fmt = (s: number) => `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
+  const fmt = (s: number) =>
+    `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 flex flex-col items-center justify-center p-6 text-white">
-      <div className="max-w-md w-full">
-        <button onClick={onBack} className="mb-8 flex items-center gap-2 text-purple-200 hover:text-white transition-colors">
+      <div className="max-w-lg w-full">
+        <button
+          onClick={onBack}
+          className="mb-6 flex items-center gap-2 text-purple-200 hover:text-white transition-colors"
+        >
           <ArrowLeft className="w-4 h-4" /> Back
         </button>
 
-        <div className="bg-white/10 backdrop-blur-sm rounded-3xl p-8 text-center">
-          <h2 className="text-2xl font-bold mb-6">Voice Recording</h2>
+        <div className="bg-white/10 backdrop-blur-sm rounded-3xl p-8">
+          <h2 className="text-2xl font-bold mb-1 text-center">Voice Recording</h2>
+          <p className="text-purple-300 text-sm text-center mb-6">Choose your language, then speak your query</p>
 
+          {/* Language picker */}
           <div className="mb-6">
-            <label className="block text-sm text-purple-200 mb-2">Select Language</label>
-            <select
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}
-              disabled={isRecording}
-              className="w-full bg-white/20 border border-white/30 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-400"
-            >
+            <div className="flex items-center gap-2 mb-3">
+              <Globe className="w-4 h-4 text-purple-300" />
+              <span className="text-sm text-purple-200 font-medium">Select Your Language</span>
+              {language && (
+                <span className="ml-auto text-sm font-semibold text-white bg-white/20 px-3 py-0.5 rounded-full">
+                  {selected.native}
+                </span>
+              )}
+            </div>
+            <div className="grid grid-cols-4 gap-2">
               {LANGUAGES.map((l) => (
-                <option key={l.code} value={l.code} className="text-gray-900 bg-white">{l.label}</option>
+                <button
+                  key={l.code}
+                  onClick={() => !isRecording && setLanguage(l.code)}
+                  disabled={isRecording}
+                  className={`flex flex-col items-center justify-center px-2 py-2.5 rounded-xl text-center transition-all disabled:cursor-not-allowed ${
+                    language === l.code
+                      ? 'bg-white text-purple-900 font-bold shadow-lg scale-105'
+                      : 'bg-white/10 hover:bg-white/20 text-white'
+                  }`}
+                >
+                  <span className="text-base leading-none mb-1">{l.native}</span>
+                  <span className="text-xs opacity-70">{l.label}</span>
+                </button>
               ))}
-            </select>
+            </div>
           </div>
 
-          <div className="flex justify-center mb-6">
-            <div className={`w-32 h-32 rounded-full flex items-center justify-center transition-all ${isRecording ? 'bg-red-500 animate-pulse shadow-lg shadow-red-500/50' : 'bg-purple-500'}`}>
-              <Mic className="w-14 h-14" />
+          {/* Mic button */}
+          <div className="flex justify-center mb-5">
+            <div
+              className={`w-28 h-28 rounded-full flex items-center justify-center transition-all ${
+                isRecording
+                  ? 'bg-red-500 animate-pulse shadow-lg shadow-red-500/50'
+                  : 'bg-purple-500 hover:bg-purple-400'
+              }`}
+            >
+              <Mic className="w-12 h-12" />
             </div>
           </div>
 
           {isRecording && (
-            <div className="mb-4 text-2xl font-mono text-red-300">{fmt(seconds)}</div>
+            <div className="text-center mb-4">
+              <span className="text-3xl font-mono text-red-300">{fmt(seconds)}</span>
+              <p className="text-xs text-purple-300 mt-1">Recording in <strong>{selected.label}</strong>…</p>
+            </div>
           )}
 
           {!isRecording ? (
             <button
               onClick={startRecording}
-              className="w-full bg-white text-purple-900 font-bold py-4 rounded-2xl text-lg hover:bg-purple-100 transition-all"
+              className="w-full bg-white text-purple-900 font-bold py-4 rounded-2xl text-lg hover:bg-purple-100 transition-all flex items-center justify-center gap-2"
             >
-              <Mic className="inline w-5 h-5 mr-2 mb-0.5" />
-              Start Recording
+              <Mic className="w-5 h-5" /> Start Recording
             </button>
           ) : (
             <button
               onClick={stopRecording}
-              className="w-full bg-red-500 text-white font-bold py-4 rounded-2xl text-lg hover:bg-red-600 transition-all"
+              className="w-full bg-red-500 text-white font-bold py-4 rounded-2xl text-lg hover:bg-red-600 transition-all flex items-center justify-center gap-2"
             >
-              <Square className="inline w-5 h-5 mr-2 mb-0.5" />
-              Stop Recording
+              <Square className="w-5 h-5" /> Stop Recording
             </button>
           )}
 
-          <p className="text-xs text-purple-300 mt-4">
-            Speak clearly for 5–20 seconds for best results
+          <p className="text-xs text-purple-300 mt-4 text-center">
+            Speak clearly for 5–20 seconds · Your speech will be translated to English automatically
           </p>
         </div>
       </div>
