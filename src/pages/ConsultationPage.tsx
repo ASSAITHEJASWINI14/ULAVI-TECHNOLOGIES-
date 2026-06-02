@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowLeft, ArrowRight, Sparkles } from 'lucide-react';
 import { ConsultationData, TranscriptData } from '../types';
-import { consultChat, consultRecommend } from '../lib/api';
+import { consultChat } from '../lib/api';
 import ConsultationForm, { FormData } from '../components/ConsultationForm';
 import ConsultationChat from '../components/ConsultationChat';
 import RecommendationPanel from '../components/RecommendationPanel';
@@ -26,8 +26,6 @@ export default function ConsultationPage({ transcript, onBack, onNext }: Props) 
   const [chatHistory, setChatHistory] = useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
-  const [recLoading, setRecLoading] = useState(false);
-  const [recommendations, setRecommendations] = useState('');
 
   const handleFormChange = (field: keyof FormData, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -56,28 +54,11 @@ export default function ConsultationPage({ transcript, onBack, onNext }: Props) 
     }
   };
 
-  const handleGenerateRecommendations = async () => {
-    setRecLoading(true);
-    try {
-      const res = await consultRecommend({
-        ...form,
-        transcript: transcript.english,
-      });
-      setRecommendations(res.recommendations);
-    } catch {
-      setRecommendations(
-        'Could not generate recommendations. Please ensure the backend is running on port 8000.'
-      );
-    } finally {
-      setRecLoading(false);
-    }
-  };
-
   const handleNext = () => {
     onNext({
       ...form,
       chatHistory,
-      recommendations,
+      recommendations: '',
     });
   };
 
@@ -101,20 +82,15 @@ export default function ConsultationPage({ transcript, onBack, onNext }: Props) 
           </div>
         </div>
 
-        {/* Transcript banner */}
         <div className="bg-white/5 border border-white/10 rounded-2xl px-4 py-3 mb-5 text-sm text-purple-200">
           <span className="text-xs text-purple-400 uppercase tracking-widest mr-2">Your query:</span>
           <span className="italic">"{transcript.english}"</span>
         </div>
 
-        {/* Two-column layout: Form | Chat */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <ConsultationForm
             data={form}
             onChange={handleFormChange}
-            onGenerateRecommendations={handleGenerateRecommendations}
-            loading={recLoading}
-            recommendations={recommendations}
           />
           <ConsultationChat
             chatHistory={chatHistory}
@@ -125,15 +101,13 @@ export default function ConsultationPage({ transcript, onBack, onNext }: Props) 
           />
         </div>
 
-        {/* Recommendation panel with summary */}
         <RecommendationPanel
           formData={form}
           chatHistory={chatHistory}
-          recommendations={recommendations}
+          recommendations=""
           transcript={transcript.english}
         />
 
-        {/* Navigation */}
         <div className="flex justify-between items-center mt-6 pb-6">
           <p className="text-xs text-purple-400">
             All fields are optional — you can skip straight to contact details

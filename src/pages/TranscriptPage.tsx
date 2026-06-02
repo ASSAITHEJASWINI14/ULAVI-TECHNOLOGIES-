@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, ArrowRight, Globe } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Globe, Mic } from 'lucide-react';
 import { TranscriptData } from '../types';
 
 interface Props {
@@ -12,10 +12,6 @@ export default function TranscriptPage({ transcript, onBack, onNext }: Props) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 flex flex-col items-center justify-center p-6 text-white">
       <div className="max-w-lg w-full">
-        <button onClick={onBack} className="mb-6 flex items-center gap-2 text-purple-200 hover:text-white transition-colors">
-          <ArrowLeft className="w-4 h-4" /> Back
-        </button>
-
         <div className="bg-white/10 backdrop-blur-sm rounded-3xl p-8">
           <div className="flex items-center gap-3 mb-6">
             <Globe className="w-6 h-6 text-purple-300" />
@@ -36,12 +32,20 @@ export default function TranscriptPage({ transcript, onBack, onNext }: Props) {
             </div>
           </div>
 
-          <button
-            onClick={onNext}
-            className="w-full bg-white text-purple-900 font-bold py-4 rounded-2xl text-lg hover:bg-purple-100 transition-all flex items-center justify-center gap-2"
-          >
-            Continue <ArrowRight className="w-5 h-5" />
-          </button>
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={onNext}
+              className="w-full bg-white text-purple-900 font-bold py-4 rounded-2xl text-lg hover:bg-purple-100 transition-all flex items-center justify-center gap-2"
+            >
+              Continue <ArrowRight className="w-5 h-5" />
+            </button>
+            <button
+              onClick={onBack}
+              className="w-full bg-white/10 border border-white/20 text-white font-semibold py-3 rounded-2xl hover:bg-white/20 transition-all flex items-center justify-center gap-2"
+            >
+              <Mic className="w-4 h-4" /> Record Again
+            </button>
+          </div>
         </div>
       </div>
     </div>

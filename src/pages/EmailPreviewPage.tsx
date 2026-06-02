@@ -19,10 +19,10 @@ export default function EmailPreviewPage({ transcript, contact, consultation, on
   const phoneNumber = `${contact.countryCode} ${contact.phone}`;
 
   const buildEmailBody = () => {
-    let body = `QUERY:\n${transcript.english}\n\nPHONE NUMBER:\n${phoneNumber}\n\nTIMESTAMP:\n${timestamp}`;
+    let body = `FROM (CUSTOMER):\n${contact.fromEmail}\n\nQUERY:\n${transcript.english}\n\nPHONE NUMBER:\n${phoneNumber}\n\nTIMESTAMP:\n${timestamp}`;
 
     if (consultation) {
-      const { days, persons, budget, packagePreference, foodPreference, additionalPreferences, chatHistory, recommendations } = consultation;
+      const { days, persons, budget, packagePreference, foodPreference, additionalPreferences, chatHistory } = consultation;
       if (days || persons || budget) {
         body += '\n\n--- CONSULTATION DETAILS ---';
         if (days) body += `\nDays: ${days}`;
@@ -38,9 +38,6 @@ export default function EmailPreviewPage({ transcript, contact, consultation, on
           body += `\n${m.role === 'user' ? 'User' : 'AI'}: ${m.content}`;
         });
       }
-      if (recommendations) {
-        body += `\n\n--- RECOMMENDATIONS ---\n${recommendations}`;
-      }
     }
     return body;
   };
@@ -50,7 +47,6 @@ export default function EmailPreviewPage({ transcript, contact, consultation, on
     setError('');
     try {
       const res = await sendEmail({
-        to_email: contact.toEmail,
         from_email: contact.fromEmail,
         subject: `ULAVI Support Query — ${new Date().toLocaleString()}`,
         query: transcript.english,
@@ -81,15 +77,15 @@ export default function EmailPreviewPage({ transcript, contact, consultation, on
         <div className="bg-white/10 backdrop-blur-sm rounded-3xl p-6 mb-6">
           <div className="space-y-3 text-sm mb-4">
             <div className="flex gap-4">
-              <span className="text-purple-300 w-12">From:</span>
+              <span className="text-purple-300 w-16">From:</span>
               <span>{contact.fromEmail}</span>
             </div>
             <div className="flex gap-4">
-              <span className="text-purple-300 w-12">To:</span>
-              <span>{contact.toEmail}</span>
+              <span className="text-purple-300 w-16">To:</span>
+              <span className="text-purple-200 italic">Configured receiver (set in Settings → SMTP)</span>
             </div>
             <div className="flex gap-4">
-              <span className="text-purple-300 w-12">Subject:</span>
+              <span className="text-purple-300 w-16">Subject:</span>
               <span>ULAVI Support Query — {new Date().toLocaleString()}</span>
             </div>
           </div>

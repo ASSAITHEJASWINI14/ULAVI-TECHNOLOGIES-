@@ -1,5 +1,4 @@
 import React from 'react';
-import { Loader2, Sparkles } from 'lucide-react';
 
 export interface FormData {
   days: string;
@@ -13,9 +12,6 @@ export interface FormData {
 interface Props {
   data: FormData;
   onChange: (field: keyof FormData, value: string) => void;
-  onGenerateRecommendations: () => void;
-  loading: boolean;
-  recommendations: string;
 }
 
 const FIELDS: { key: keyof FormData; label: string; placeholder: string }[] = [
@@ -26,7 +22,7 @@ const FIELDS: { key: keyof FormData; label: string; placeholder: string }[] = [
   { key: 'foodPreference', label: 'Food Preference', placeholder: 'e.g. Vegetarian, Vegan, Non-veg' },
 ];
 
-export default function ConsultationForm({ data, onChange, onGenerateRecommendations, loading, recommendations }: Props) {
+export default function ConsultationForm({ data, onChange }: Props) {
   return (
     <div className="bg-white/10 backdrop-blur-sm rounded-3xl p-6 flex flex-col h-full">
       <h3 className="font-semibold text-lg mb-4 text-white">Your Requirements</h3>
@@ -55,18 +51,6 @@ export default function ConsultationForm({ data, onChange, onGenerateRecommendat
           />
         </div>
       </div>
-
-      <button
-        onClick={onGenerateRecommendations}
-        disabled={loading}
-        className="w-full mt-4 bg-yellow-400 text-gray-900 font-bold py-3 rounded-2xl hover:bg-yellow-300 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {loading ? (
-          <><Loader2 className="w-4 h-4 animate-spin" /> Generating…</>
-        ) : (
-          <><Sparkles className="w-4 h-4" /> Generate Recommendations</>
-        )}
-      </button>
     </div>
   );
 }

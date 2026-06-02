@@ -27,7 +27,7 @@ app.add_middleware(
 
 # Register routes
 from routes.consultation import router as consultation_router
-from routes.settings import router as settings_router
+from routes.settings import router as settings_router, get_smtp_config
 app.include_router(consultation_router)
 app.include_router(settings_router)
 
@@ -52,12 +52,9 @@ def root():
 
 @app.get("/smtp-config")
 def smtp_config():
-    configured = bool(
-        os.getenv("SMTP_USER") and
-        os.getenv("SMTP_PASSWORD") and
-        os.getenv("SMTP_HOST")
-    )
-    return {"configured": configured, "host": os.getenv("SMTP_HOST", "")}
+    cfg = get_smtp_config()
+    configured = bool(cfg["smtp_user"] and cfg["smtp_password"] and cfg["smtp_host"])
+    return {"configured": configured, "host": cfg["smtp_host"]}
 
 
 @app.post("/transcribe")
@@ -65,7 +62,6 @@ async def transcribe(
     file: UploadFile = File(...),
     language: str = Form(default="en"),
 ):
-    # Check Whisper is importable
     try:
         import whisper
     except ImportError:
@@ -77,7 +73,6 @@ async def transcribe(
             )
         )
 
-    # Check torch is available (whisper needs it)
     try:
         import torch  # noqa: F401
     except ImportError:
@@ -89,7 +84,6 @@ async def transcribe(
             )
         )
 
-    # Save uploaded audio to a temp file
     audio_bytes = await file.read()
     if not audio_bytes:
         raise HTTPException(status_code=400, detail="Empty audio file received.")
@@ -139,13 +133,19 @@ async def transcribe(
 
         transcript = result.get("text", "").strip()
 
+        # Use Google Translate for native → English translation
         english_translation = transcript
         if language != "en" and transcript:
             try:
-                translation_result = model.transcribe(tmp_path, task="translate")
-                english_translation = translation_result.get("text", "").strip()
+                from deep_translator import GoogleTranslator
+                english_translation = GoogleTranslator(source="auto", target="en").translate(transcript)
             except Exception:
-                pass
+                # Fallback: use Whisper's built-in translate task
+                try:
+                    translation_result = model.transcribe(tmp_path, task="translate")
+                    english_translation = translation_result.get("text", "").strip()
+                except Exception:
+                    pass
 
         return {
             "transcript": transcript,
@@ -158,7 +158,6 @@ async def transcribe(
 
 
 class SendEmailRequest(BaseModel):
-    to_email: str
     from_email: str
     subject: str
     query: str
@@ -172,6 +171,8 @@ async def send_email(req: SendEmailRequest):
     token = "ULAVI-" + uuid.uuid4().hex[:8].upper()
 
     body_lines = [
+        f"FROM (CUSTOMER): {req.from_email}",
+        "",
         "QUERY:",
         req.query,
         "",
@@ -210,15 +211,21 @@ async def send_email(req: SendEmailRequest):
                 role = "User" if msg.get("role") == "user" else "AI"
                 body_lines.append(f"{role}: {msg.get('content', '')}")
 
-        if c.get("recommendations"):
-            body_lines += ["", "--- RECOMMENDATIONS ---", c["recommendations"]]
-
     body = "\n".join(body_lines)
 
-    smtp_host = os.getenv("SMTP_HOST", "")
-    smtp_user = os.getenv("SMTP_USER", "")
-    smtp_password = os.getenv("SMTP_PASSWORD", "")
-    smtp_port = int(os.getenv("SMTP_PORT", "587"))
+    # Get SMTP config (runtime settings take priority over .env)
+    cfg = get_smtp_config()
+    smtp_host = cfg["smtp_host"]
+    smtp_user = cfg["smtp_user"]
+    smtp_password = cfg["smtp_password"]
+    smtp_port = cfg["smtp_port"]
+    receiver_email = cfg["receiver_email"]
+
+    if not receiver_email:
+        raise HTTPException(
+            status_code=400,
+            detail="Receiver email not configured. Go to Settings → SMTP Configuration and set the receiver email."
+        )
 
     status = "queued"
     error_msg = None
@@ -229,9 +236,10 @@ async def send_email(req: SendEmailRequest):
             from email.message import EmailMessage
 
             msg = EmailMessage()
-            msg["From"] = req.from_email
-            msg["To"] = req.to_email
+            msg["From"] = f"{req.from_email} via ULAVI <{smtp_user}>"
+            msg["To"] = receiver_email
             msg["Subject"] = req.subject
+            msg["Reply-To"] = req.from_email
             msg.set_content(body)
 
             await aiosmtplib.send(
@@ -246,13 +254,20 @@ async def send_email(req: SendEmailRequest):
         except Exception as e:
             error_msg = str(e)
             status = "failed"
+            raise HTTPException(
+                status_code=500,
+                detail=f"Email sending failed: {error_msg}. Check your SMTP credentials in Settings."
+            )
     else:
-        status = "queued"
+        raise HTTPException(
+            status_code=400,
+            detail="SMTP not configured. Go to Settings → SMTP Configuration to add your Gmail credentials."
+        )
 
     entry = {
         "id": token,
         "token": token,
-        "to_email": req.to_email,
+        "to_email": receiver_email,
         "from_email": req.from_email,
         "subject": req.subject,
         "query": req.query,
@@ -262,16 +277,14 @@ async def send_email(req: SendEmailRequest):
         "created_at": req.timestamp,
         "body": body,
     }
-    if error_msg:
-        entry["error"] = error_msg
 
     outbox = load_outbox()
     outbox.insert(0, entry)
     save_outbox(outbox)
 
     return {
-        "success": status in ("sent", "queued"),
-        "message": f"Email {status}",
+        "success": True,
+        "message": "Email sent successfully",
         "token": token,
         "status": status,
     }

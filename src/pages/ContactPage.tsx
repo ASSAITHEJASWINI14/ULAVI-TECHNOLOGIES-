@@ -28,15 +28,13 @@ export default function ContactPage({ onBack, onNext }: Props) {
   const [countryCode, setCountryCode] = useState('+91');
   const [phone, setPhone] = useState('');
   const [fromEmail, setFromEmail] = useState('');
-  const [toEmail, setToEmail] = useState('');
   const [error, setError] = useState('');
 
   const handleNext = () => {
     if (!phone.trim()) { setError('Please enter a phone number'); return; }
-    if (!fromEmail.trim()) { setError('Please enter your From email'); return; }
-    if (!toEmail.trim()) { setError('Please enter a To email'); return; }
+    if (!fromEmail.trim()) { setError('Please enter your email'); return; }
     setError('');
-    onNext({ countryCode, phone, fromEmail, toEmail });
+    onNext({ countryCode, phone, fromEmail });
   };
 
   return (
@@ -77,26 +75,13 @@ export default function ContactPage({ onBack, onNext }: Props) {
 
             <div>
               <label className="block text-sm text-purple-200 mb-2">
-                <Mail className="inline w-4 h-4 mr-1" /> From Email (your Gmail)
+                <Mail className="inline w-4 h-4 mr-1" /> Your Email
               </label>
               <input
                 type="email"
                 value={fromEmail}
                 onChange={(e) => setFromEmail(e.target.value)}
-                placeholder="sender@gmail.com"
-                className="w-full bg-white/10 border border-white/30 rounded-xl px-4 py-3 text-sm placeholder-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-400"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm text-purple-200 mb-2">
-                <Mail className="inline w-4 h-4 mr-1" /> To Email (support address)
-              </label>
-              <input
-                type="email"
-                value={toEmail}
-                onChange={(e) => setToEmail(e.target.value)}
-                placeholder="support@example.com"
+                placeholder="your@email.com"
                 className="w-full bg-white/10 border border-white/30 rounded-xl px-4 py-3 text-sm placeholder-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-400"
               />
             </div>

@@ -20,7 +20,6 @@ export async function transcribeAudio(audioBlob: Blob, language: string): Promis
 }
 
 export async function sendEmail(payload: {
-  to_email: string;
   from_email: string;
   subject: string;
   query: string;
@@ -44,6 +43,28 @@ export async function getEmailOutbox(): Promise<any[]> {
 
 export async function checkSmtpConfig(): Promise<{ configured: boolean }> {
   const response = await api.get('/smtp-config');
+  return response.data;
+}
+
+export async function getSmtpSettings(): Promise<{
+  smtp_host: string;
+  smtp_port: number;
+  smtp_user: string;
+  smtp_password_set: boolean;
+  receiver_email: string;
+}> {
+  const response = await api.get('/api/settings/smtp');
+  return response.data;
+}
+
+export async function saveSmtpSettings(payload: {
+  smtp_host: string;
+  smtp_port: number;
+  smtp_user: string;
+  smtp_password: string;
+  receiver_email: string;
+}): Promise<{ success: boolean; message: string }> {
+  const response = await api.post('/api/settings/smtp', payload);
   return response.data;
 }
 

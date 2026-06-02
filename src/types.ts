@@ -20,7 +20,6 @@ export interface ContactData {
   countryCode: string;
   phone: string;
   fromEmail: string;
-  toEmail: string;
 }
 
 export interface ConsultationData {

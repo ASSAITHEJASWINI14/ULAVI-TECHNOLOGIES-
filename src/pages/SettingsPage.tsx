@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Key, CheckCircle, XCircle, Eye, EyeOff, Save, Loader2, Sparkles, Zap, ExternalLink } from 'lucide-react';
-import { api } from '../lib/api';
+import { ArrowLeft, Key, CheckCircle, XCircle, Eye, EyeOff, Save, Loader2, Sparkles, Zap, ExternalLink, Mail, Server } from 'lucide-react';
+import { api, getSmtpSettings, saveSmtpSettings } from '../lib/api';
 
 interface Props {
   onBack: () => void;
@@ -10,6 +10,14 @@ interface AIStatus {
   enabled: boolean;
   has_key: boolean;
   model: string;
+}
+
+interface SmtpForm {
+  smtp_host: string;
+  smtp_port: number;
+  smtp_user: string;
+  smtp_password: string;
+  receiver_email: string;
 }
 
 export default function SettingsPage({ onBack }: Props) {
@@ -22,8 +30,22 @@ export default function SettingsPage({ onBack }: Props) {
   const [saveMsg, setSaveMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [testMsg, setTestMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  const [smtpForm, setSmtpForm] = useState<SmtpForm>({
+    smtp_host: 'smtp.gmail.com',
+    smtp_port: 587,
+    smtp_user: '',
+    smtp_password: '',
+    receiver_email: '',
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [smtpLoading, setSmtpLoading] = useState(true);
+  const [smtpSaving, setSmtpSaving] = useState(false);
+  const [smtpMsg, setSmtpMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [smtpPasswordSet, setSmtpPasswordSet] = useState(false);
+
   useEffect(() => {
     fetchStatus();
+    fetchSmtp();
   }, []);
 
   const fetchStatus = async () => {
@@ -35,6 +57,25 @@ export default function SettingsPage({ onBack }: Props) {
       setStatus({ enabled: false, has_key: false, model: '' });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchSmtp = async () => {
+    setSmtpLoading(true);
+    try {
+      const res = await getSmtpSettings();
+      setSmtpForm({
+        smtp_host: res.smtp_host || 'smtp.gmail.com',
+        smtp_port: res.smtp_port || 587,
+        smtp_user: res.smtp_user || '',
+        smtp_password: '',
+        receiver_email: res.receiver_email || '',
+      });
+      setSmtpPasswordSet(res.smtp_password_set);
+    } catch {
+      // backend may not have settings yet — defaults are fine
+    } finally {
+      setSmtpLoading(false);
     }
   };
 
@@ -67,7 +108,7 @@ export default function SettingsPage({ onBack }: Props) {
         context: {},
       });
       setTestMsg({ type: 'success', text: `AI responded: "${res.data.answer.slice(0, 120)}${res.data.answer.length > 120 ? '…' : ''}"` });
-    } catch (e: any) {
+    } catch {
       setTestMsg({ type: 'error', text: 'Test failed. Check if the backend is running.' });
     } finally {
       setTesting(false);
@@ -88,6 +129,29 @@ export default function SettingsPage({ onBack }: Props) {
     }
   };
 
+  const handleSmtpSave = async () => {
+    if (!smtpForm.receiver_email.trim()) {
+      setSmtpMsg({ type: 'error', text: 'Receiver email is required.' });
+      return;
+    }
+    setSmtpSaving(true);
+    setSmtpMsg(null);
+    try {
+      const res = await saveSmtpSettings(smtpForm);
+      if (res.success) {
+        setSmtpMsg({ type: 'success', text: 'SMTP configuration saved! Emails will now be delivered.' });
+        setSmtpPasswordSet(true);
+        setSmtpForm((f) => ({ ...f, smtp_password: '' }));
+      } else {
+        setSmtpMsg({ type: 'error', text: res.message || 'Failed to save SMTP config.' });
+      }
+    } catch (e: any) {
+      setSmtpMsg({ type: 'error', text: e?.response?.data?.detail || 'Could not reach backend.' });
+    } finally {
+      setSmtpSaving(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 p-4 text-white">
       <div className="max-w-xl mx-auto">
@@ -98,7 +162,115 @@ export default function SettingsPage({ onBack }: Props) {
           <h2 className="text-xl font-bold">Settings</h2>
         </div>
 
-        {/* AI Status Card */}
+        {/* ── SMTP Configuration ── */}
+        <div className="bg-white/10 backdrop-blur-sm rounded-3xl p-6 mb-5">
+          <h3 className="font-semibold text-lg flex items-center gap-2 mb-1">
+            <Mail className="w-5 h-5 text-purple-300" /> SMTP Configuration
+          </h3>
+          <p className="text-xs text-purple-300 mb-5">
+            Enter your Gmail credentials to send emails. The <strong>receiver email</strong> is fixed — all queries go there.
+            Senders (customers) can change each time.
+          </p>
+
+          {smtpLoading ? (
+            <Loader2 className="w-5 h-5 animate-spin text-purple-300" />
+          ) : (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs text-purple-200 mb-1">SMTP Host</label>
+                  <input
+                    value={smtpForm.smtp_host}
+                    onChange={(e) => setSmtpForm((f) => ({ ...f, smtp_host: e.target.value }))}
+                    placeholder="smtp.gmail.com"
+                    className="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2.5 text-sm text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-purple-200 mb-1">Port</label>
+                  <input
+                    type="number"
+                    value={smtpForm.smtp_port}
+                    onChange={(e) => setSmtpForm((f) => ({ ...f, smtp_port: parseInt(e.target.value) || 587 }))}
+                    className="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2.5 text-sm text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs text-purple-200 mb-1">Gmail Account (sender)</label>
+                <input
+                  type="email"
+                  value={smtpForm.smtp_user}
+                  onChange={(e) => setSmtpForm((f) => ({ ...f, smtp_user: e.target.value }))}
+                  placeholder="your-gmail@gmail.com"
+                  className="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2.5 text-sm text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs text-purple-200 mb-1">
+                  Gmail App Password {smtpPasswordSet && <span className="text-green-300">(already set — leave blank to keep)</span>}
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={smtpForm.smtp_password}
+                    onChange={(e) => setSmtpForm((f) => ({ ...f, smtp_password: e.target.value }))}
+                    placeholder={smtpPasswordSet ? '••••••••••••••••' : 'xxxx xxxx xxxx xxxx'}
+                    className="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2.5 pr-10 text-sm font-mono text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                  />
+                  <button
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-purple-400 hover:text-purple-200 transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                <p className="text-xs text-purple-400 mt-1">
+                  Use a Gmail <strong>App Password</strong>, not your regular password.{' '}
+                  <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener noreferrer" className="text-purple-300 hover:text-white underline">
+                    Create one here
+                  </a>
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs text-purple-200 mb-1 flex items-center gap-1">
+                  <Server className="w-3 h-3" /> Receiver Email <span className="text-yellow-300">(fixed — all queries sent here)</span>
+                </label>
+                <input
+                  type="email"
+                  value={smtpForm.receiver_email}
+                  onChange={(e) => setSmtpForm((f) => ({ ...f, receiver_email: e.target.value }))}
+                  placeholder="support@yourcompany.com"
+                  className="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2.5 text-sm text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                />
+              </div>
+
+              <button
+                onClick={handleSmtpSave}
+                disabled={smtpSaving}
+                className="w-full bg-white text-purple-900 font-bold py-3 rounded-2xl hover:bg-purple-100 transition-all flex items-center justify-center gap-2 disabled:opacity-40"
+              >
+                {smtpSaving ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</>
+                ) : (
+                  <><Save className="w-4 h-4" /> Save SMTP Settings</>
+                )}
+              </button>
+
+              {smtpMsg && (
+                <div className={`rounded-2xl px-4 py-3 text-sm flex items-start gap-2 ${smtpMsg.type === 'success' ? 'bg-green-400/10 border border-green-400/30 text-green-200' : 'bg-red-400/10 border border-red-400/30 text-red-200'}`}>
+                  {smtpMsg.type === 'success' ? <CheckCircle className="w-4 h-4 flex-shrink-0 mt-0.5" /> : <XCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />}
+                  {smtpMsg.text}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* ── AI Status ── */}
         <div className="bg-white/10 backdrop-blur-sm rounded-3xl p-6 mb-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-lg flex items-center gap-2">
@@ -122,7 +294,7 @@ export default function SettingsPage({ onBack }: Props) {
               {status?.enabled ? (
                 <>
                   <p className="mb-1">
-                    <span className="text-white font-medium">OpenAI GPT</span> is active and powering your AI consultation chat and recommendations.
+                    <span className="text-white font-medium">OpenAI GPT</span> is active and powering your AI consultation chat.
                   </p>
                   {status.model && (
                     <p className="text-xs text-purple-300">Model: {status.model}</p>
@@ -131,7 +303,7 @@ export default function SettingsPage({ onBack }: Props) {
               ) : (
                 <p>
                   Using built-in fallback responses. Add an OpenAI API key below to enable
-                  <span className="text-white font-medium"> GPT-powered</span> chat and recommendations.
+                  <span className="text-white font-medium"> GPT-powered</span> chat.
                 </p>
               )}
             </div>
@@ -148,7 +320,7 @@ export default function SettingsPage({ onBack }: Props) {
           )}
         </div>
 
-        {/* API Key Input */}
+        {/* ── API Key Input ── */}
         <div className="bg-white/10 backdrop-blur-sm rounded-3xl p-6 mb-5">
           <h3 className="font-semibold text-lg flex items-center gap-2 mb-1">
             <Key className="w-5 h-5 text-purple-300" /> OpenAI API Key
@@ -194,7 +366,7 @@ export default function SettingsPage({ onBack }: Props) {
           )}
         </div>
 
-        {/* Test AI */}
+        {/* ── Test AI ── */}
         <div className="bg-white/10 backdrop-blur-sm rounded-3xl p-6 mb-5">
           <h3 className="font-semibold mb-1 flex items-center gap-2">
             <Zap className="w-5 h-5 text-yellow-300" /> Test AI Response
@@ -221,9 +393,9 @@ export default function SettingsPage({ onBack }: Props) {
           )}
         </div>
 
-        {/* How to get a key */}
+        {/* ── How to get a key ── */}
         <div className="bg-white/5 border border-white/10 rounded-3xl p-6">
-          <h3 className="font-semibold mb-3 text-sm text-purple-200 uppercase tracking-widest">How to get an API key</h3>
+          <h3 className="font-semibold mb-3 text-sm text-purple-200 uppercase tracking-widest">How to get an OpenAI API key</h3>
           <ol className="space-y-2 text-sm text-purple-200">
             <li className="flex gap-2"><span className="text-purple-400 font-bold">1.</span> Go to <span className="text-white font-medium">platform.openai.com</span></li>
             <li className="flex gap-2"><span className="text-purple-400 font-bold">2.</span> Sign in or create an account</li>
