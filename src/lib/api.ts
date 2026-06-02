@@ -6,7 +6,7 @@ const API_URL = import.meta.env.VITE_API_URL || '';
 
 export const api = axios.create({
   baseURL: API_URL,
-  timeout: 60000,
+  timeout: 300000, // 5 minutes — Whisper model download + first-run load can take time
 });
 
 export async function transcribeAudio(audioBlob: Blob, language: string): Promise<{ transcript: string; english_translation: string }> {

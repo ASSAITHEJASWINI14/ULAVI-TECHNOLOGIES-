@@ -100,7 +100,7 @@ async def transcribe(
         tmp_path = tmp.name
 
     try:
-        model_name = os.getenv("WHISPER_MODEL", "small")
+        model_name = os.getenv("WHISPER_MODEL", "tiny")
 
         try:
             model = whisper.load_model(model_name)
