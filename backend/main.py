@@ -117,13 +117,19 @@ async def transcribe(
             )
         except Exception as e:
             err = str(e)
-            if "ffmpeg" in err.lower():
+            is_ffmpeg_error = (
+                "ffmpeg" in err.lower() or
+                "winerror 2" in err.lower() or
+                "the system cannot find the file" in err.lower() or
+                "no such file or directory" in err.lower()
+            )
+            if is_ffmpeg_error:
                 raise HTTPException(
                     status_code=500,
                     detail=(
-                        "ffmpeg is not installed or not found in PATH. "
-                        "Install it: winget install ffmpeg (Windows) "
-                        "or brew install ffmpeg (Mac)"
+                        "ffmpeg is not installed or not in PATH. "
+                        "Windows: run  winget install ffmpeg  then close & reopen your terminal. "
+                        "Mac: run  brew install ffmpeg"
                     )
                 )
             raise HTTPException(
