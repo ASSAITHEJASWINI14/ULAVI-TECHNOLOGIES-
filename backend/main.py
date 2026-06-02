@@ -65,23 +65,72 @@ async def transcribe(
     file: UploadFile = File(...),
     language: str = Form(default="en"),
 ):
+    # Check Whisper is importable
     try:
         import whisper
     except ImportError:
         raise HTTPException(
             status_code=500,
-            detail="Whisper not installed. Run: pip install openai-whisper"
+            detail=(
+                "openai-whisper is not installed. "
+                "Run in your backend terminal: pip install openai-whisper"
+            )
         )
 
-    with tempfile.NamedTemporaryFile(suffix=".webm", delete=False) as tmp:
-        tmp.write(await file.read())
+    # Check torch is available (whisper needs it)
+    try:
+        import torch  # noqa: F401
+    except ImportError:
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "PyTorch is not installed (required by Whisper). "
+                "Run: pip install torch --index-url https://download.pytorch.org/whl/cpu"
+            )
+        )
+
+    # Save uploaded audio to a temp file
+    audio_bytes = await file.read()
+    if not audio_bytes:
+        raise HTTPException(status_code=400, detail="Empty audio file received.")
+
+    suffix = ".webm"
+    with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
+        tmp.write(audio_bytes)
         tmp_path = tmp.name
 
     try:
         model_name = os.getenv("WHISPER_MODEL", "small")
-        model = whisper.load_model(model_name)
 
-        result = model.transcribe(tmp_path, language=language if language != "en" else None)
+        try:
+            model = whisper.load_model(model_name)
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to load Whisper model '{model_name}': {str(e)}"
+            )
+
+        try:
+            result = model.transcribe(
+                tmp_path,
+                language=language if language != "en" else None
+            )
+        except Exception as e:
+            err = str(e)
+            if "ffmpeg" in err.lower():
+                raise HTTPException(
+                    status_code=500,
+                    detail=(
+                        "ffmpeg is not installed or not found in PATH. "
+                        "Install it: winget install ffmpeg (Windows) "
+                        "or brew install ffmpeg (Mac)"
+                    )
+                )
+            raise HTTPException(
+                status_code=500,
+                detail=f"Transcription failed: {err}"
+            )
+
         transcript = result.get("text", "").strip()
 
         english_translation = transcript
@@ -97,6 +146,7 @@ async def transcribe(
             "english_translation": english_translation,
             "language": language,
         }
+
     finally:
         Path(tmp_path).unlink(missing_ok=True)
 
