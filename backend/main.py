@@ -94,7 +94,7 @@ async def transcribe(
         tmp_path = tmp.name
 
     try:
-        model_name = os.getenv("WHISPER_MODEL", "tiny")
+        model_name = os.getenv("WHISPER_MODEL", "base")
 
         try:
             model = whisper.load_model(model_name)
@@ -146,6 +146,41 @@ async def transcribe(
                     english_translation = translation_result.get("text", "").strip()
                 except Exception:
                     pass
+
+        # AI cleanup — if OpenAI key is set, polish the English into a clean query
+        from routes.settings import get_runtime_key
+        openai_key = get_runtime_key()
+        if openai_key and english_translation:
+            try:
+                import openai as oai
+                client = oai.OpenAI(api_key=openai_key)
+                completion = client.chat.completions.create(
+                    model="gpt-3.5-turbo",
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": (
+                                "You are a transcription cleanup assistant for a travel and support query system. "
+                                "The user has spoken a query which has been transcribed by speech recognition. "
+                                "Your job: fix any transcription errors, clean up grammar, and return a clear, "
+                                "natural English sentence that preserves the user's original intent. "
+                                "Do NOT add information that wasn't in the original. "
+                                "Output ONLY the cleaned query text, nothing else."
+                            ),
+                        },
+                        {
+                            "role": "user",
+                            "content": f"Raw transcription: {english_translation}",
+                        },
+                    ],
+                    max_tokens=300,
+                    temperature=0.2,
+                )
+                cleaned = completion.choices[0].message.content.strip()
+                if cleaned:
+                    english_translation = cleaned
+            except Exception:
+                pass  # If cleanup fails, use the raw translation
 
         return {
             "transcript": transcript,

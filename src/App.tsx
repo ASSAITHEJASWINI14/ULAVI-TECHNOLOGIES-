@@ -103,7 +103,10 @@ export default function App() {
       <TranscriptPage
         transcript={transcript}
         onBack={() => goTo('recording')}
-        onNext={() => goTo('consultation')}
+        onNext={(editedEnglish) => {
+          setTranscript({ ...transcript, english: editedEnglish });
+          goTo('consultation');
+        }}
       />
     );
   }
