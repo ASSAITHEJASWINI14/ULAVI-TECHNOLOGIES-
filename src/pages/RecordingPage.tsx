@@ -83,32 +83,19 @@ export default function RecordingPage({ onBack, onRecordingComplete }: Props) {
 
           {/* Language picker */}
           <div className="mb-6">
-            <div className="flex items-center gap-2 mb-3">
-              <Globe className="w-4 h-4 text-purple-300" />
-              <span className="text-sm text-purple-200 font-medium">Select Your Language</span>
-              {language && (
-                <span className="ml-auto text-sm font-semibold text-white bg-white/20 px-3 py-0.5 rounded-full">
-                  {selected.native}
-                </span>
-              )}
-            </div>
-            <div className="grid grid-cols-4 gap-2">
+            <label className="block text-sm text-purple-200 mb-2">Select Language</label>
+            <select
+              value={language}
+              onChange={(e) => setLanguage(e.target.value)}
+              disabled={isRecording}
+              className="w-full bg-white/20 border border-white/30 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-400"
+            >
               {LANGUAGES.map((l) => (
-                <button
-                  key={l.code}
-                  onClick={() => !isRecording && setLanguage(l.code)}
-                  disabled={isRecording}
-                  className={`flex flex-col items-center justify-center px-2 py-2.5 rounded-xl text-center transition-all disabled:cursor-not-allowed ${
-                    language === l.code
-                      ? 'bg-white text-purple-900 font-bold shadow-lg scale-105'
-                      : 'bg-white/10 hover:bg-white/20 text-white'
-                  }`}
-                >
-                  <span className="text-base leading-none mb-1">{l.native}</span>
-                  <span className="text-xs opacity-70">{l.label}</span>
-                </button>
+                <option key={l.code} value={l.code} className="text-gray-900 bg-white">
+                  {l.native} — {l.label}
+                </option>
               ))}
-            </div>
+            </select>
           </div>
 
           {/* Mic button */}
