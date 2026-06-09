@@ -1,6 +1,17 @@
 # ULAVI — Multilingual Voice Support Platform
 
 End-to-end voice query system: record in any language, transcribe with Whisper, translate to English, and email support with **Query**, **Phone Number**, and **Timestamp**.
+## 🌐 Live Demo
+https://your-vercel-url.vercel.app
+
+## Backend - on Render 
+ https://ulavi-technologies.onrender.com
+
+## 🎥 Demo Video
+https://www.linkedin.com/posts/a-s-sai-thejaswini-2b57762b0_artificialintelligence-generativeai-openai-ugcPost-7469765981087682561-FWBu/?utm_source=share&utm_medium=member_desktop&rcm=ACoAAErdNSkBx4lSmIMisW76JLdv5Lr62otbdOo
+
+## 💻 Source Code
+https://github.com/ASSAITHEJASWINI14/ULAVI-TECHNOLOGIES-
 
 ## Project structure
 
@@ -10,6 +21,20 @@ End-to-end voice query system: record in any language, transcribe with Whisper, 
 | Backend | `backend/` | FastAPI, Whisper, SMTP email |
 | Database | `supabase/` | Session history for dashboard |
 | Week 3 test | `backend/test_week3_email.py` | Multi-country email API test |
+
+## Features
+- Voice Translation
+- Speech-to-Text
+- AI-Powered Responses
+- Email Notifications
+- Dashboard Analytics
+
+## Tech Stack
+- React + Vite
+- FastAPI
+- OpenAI
+- Render
+- Vercel
 
 ## Quick start
 
