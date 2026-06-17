@@ -1,5 +1,4 @@
-# ULAVI — Multilingual Voice Support Platform
-
+# ULAVI — Multilingual Voice Support Platform 
 End-to-end voice query system: record in any language, transcribe with Whisper, translate to English, and email support with **Query**, **Phone Number**, and **Timestamp**.
 ## 🌐 Live Demo
 https://your-vercel-url.vercel.app
